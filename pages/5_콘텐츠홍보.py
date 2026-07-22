@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 import db
 from style import apply_style, page_header, sidebar_brand
+from security import delete_button
 
 st.set_page_config(page_title="콘텐츠·홍보", page_icon="📢", layout="wide")
 db.init_db()
@@ -48,16 +49,10 @@ with tab1:
             filtered["id"]
         ))
         if del_map:
-            c1, c2 = st.columns([3, 1])
-            with c1:
-                del_pick = st.selectbox("삭제할 콘텐츠 선택", list(del_map.keys()), key="del_content_pick")
-            with c2:
-                confirm_del = st.checkbox("삭제 확인", key="confirm_del_content")
-            if st.button("🗑 선택한 콘텐츠 삭제", type="secondary", disabled=not confirm_del):
-                del_id = int(del_map[del_pick])
-                db.delete_row("content_calendar", del_id)
-                st.success(f"'{del_pick}' 콘텐츠를 삭제했습니다.")
-                st.rerun()
+            del_pick = st.selectbox("삭제할 콘텐츠 선택", list(del_map.keys()), key="del_content_pick")
+            delete_button(
+                "🗑 선택한 콘텐츠 삭제", "content_calendar", int(del_map[del_pick]), del_pick, key="del_content_btn"
+            )
 
     st.caption("⚠️ 미성년 아티스트/연습생이 포함된 콘텐츠는 청소년 보호 기준(초상권, 과도한 노출·이미지 연출 지양 등)을 항상 확인해주세요.")
 
