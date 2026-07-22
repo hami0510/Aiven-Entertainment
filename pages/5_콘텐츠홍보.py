@@ -10,7 +10,6 @@ apply_style()
 sidebar_brand()
 
 page_header("📢", "콘텐츠·홍보 기획 관리", "채널별 콘텐츠 캘린더 관리")
-st.title("📢 콘텐츠·홍보 기획 관리")
 
 tab1, tab2 = st.tabs(["콘텐츠 캘린더", "콘텐츠 등록"])
 
@@ -41,6 +40,24 @@ with tab1:
 
         st.write("채널별 콘텐츠 수")
         st.bar_chart(content["channel"].value_counts())
+
+        st.markdown("---")
+        st.subheader("🗑 콘텐츠 삭제")
+        del_map = dict(zip(
+            filtered["content_date"] + " · " + filtered["channel"] + " · " + filtered["title"] + " (ID:" + filtered["id"].astype(str) + ")",
+            filtered["id"]
+        ))
+        if del_map:
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                del_pick = st.selectbox("삭제할 콘텐츠 선택", list(del_map.keys()), key="del_content_pick")
+            with c2:
+                confirm_del = st.checkbox("삭제 확인", key="confirm_del_content")
+            if st.button("🗑 선택한 콘텐츠 삭제", type="secondary", disabled=not confirm_del):
+                del_id = int(del_map[del_pick])
+                db.delete_row("content_calendar", del_id)
+                st.success(f"'{del_pick}' 콘텐츠를 삭제했습니다.")
+                st.rerun()
 
     st.caption("⚠️ 미성년 아티스트/연습생이 포함된 콘텐츠는 청소년 보호 기준(초상권, 과도한 노출·이미지 연출 지양 등)을 항상 확인해주세요.")
 
