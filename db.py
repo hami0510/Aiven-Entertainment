@@ -1,29 +1,34 @@
 """
 Aiven Entertainment 관리 시스템 - 데이터베이스 레이어
-SQLite 기반. 앱 최초 실행 시 자동으로 테이블을 생성합니다.
+Streamlit Secrets에 DB_URL(PostgreSQL/Supabase)이 있으면 영구 DB를 사용하고,
+없으면 로컬 SQLite(data/aven.db)로 동작합니다. 앱 최초 실행 시 테이블을 자동 생성합니다.
 """
-import sqlite3
 import os
-from datetime import date
 import pandas as pd
+from sqlalchemy import create_engine, text
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "aiven.db")
+try:
+    import streamlit as st
+    _DB_URL = st.secrets.get("DB_URL", None)
+except Exception:
+    _DB_URL = None
 
+if _DB_URL:
+    engine = create_engine(_DB_URL, pool_pre_ping=True)
+    IS_PG = True
+else:
+    _base = os.path.dirname(__file__)
+    os.makedirs(os.path.join(_base, "data"), exist_ok=True)
+    engine = create_engine(f"sqlite:///{os.path.join(_base, 'data', 'aven.db')}")
+    IS_PG = False
 
-def get_conn():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+_ID = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
 
 def init_db():
-    conn = get_conn()
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS trainees (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ddl = [
+        f"""CREATE TABLE IF NOT EXISTS trainees (
+            id {_ID},
             name TEXT NOT NULL,
             birth_date TEXT,
             gender TEXT,
@@ -33,26 +38,19 @@ def init_db():
             phone TEXT,
             guardian_contact TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS evaluations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS evaluations (
+            id {_ID},
             trainee_id INTEGER NOT NULL,
             eval_date TEXT,
             vocal_score INTEGER,
             dance_score INTEGER,
             rap_score INTEGER,
             attitude_score INTEGER,
-            memo TEXT,
-            FOREIGN KEY (trainee_id) REFERENCES trainees(id) ON DELETE CASCADE
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS training_sessions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            memo TEXT
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS training_sessions (
+            id {_ID},
             session_date TEXT,
             start_time TEXT,
             end_time TEXT,
@@ -61,101 +59,76 @@ def init_db():
             room TEXT,
             participants TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS budget_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS budget_items (
+            id {_ID},
             item_date TEXT,
             category TEXT,
             item_name TEXT,
-            amount INTEGER,
+            amount BIGINT,
             direction TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS contracts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS contracts (
+            id {_ID},
             party_name TEXT,
             contract_type TEXT,
             start_date TEXT,
             end_date TEXT,
             status TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS schedule_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS schedule_events (
+            id {_ID},
             event_date TEXT,
             title TEXT,
             category TEXT,
             owner TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS content_calendar (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS content_calendar (
+            id {_ID},
             content_date TEXT,
             channel TEXT,
             content_type TEXT,
             title TEXT,
             status TEXT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS meeting_notes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS meeting_notes (
+            id {_ID},
             meeting_date TEXT,
             title TEXT,
             attendees TEXT,
             decisions TEXT,
             content TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS performances (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS performances (
+            id {_ID},
             event_date TEXT,
             title TEXT,
             artist_name TEXT,
             venue TEXT,
             category TEXT,
             status TEXT,
-            gross_fee INTEGER,
+            gross_fee BIGINT,
             memo TEXT
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS settlements (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS settlements (
+            id {_ID},
             performance_id INTEGER,
             settlement_date TEXT,
-            gross_revenue INTEGER,
-            expenses INTEGER,
+            gross_revenue BIGINT,
+            expenses BIGINT,
             company_rate REAL,
             artist_rate REAL,
-            company_amount INTEGER,
-            artist_amount INTEGER,
+            company_amount BIGINT,
+            artist_amount BIGINT,
             settlement_status TEXT,
-            memo TEXT,
-            FOREIGN KEY (performance_id) REFERENCES performances(id) ON DELETE SET NULL
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS artists (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            memo TEXT
+        )""",
+        f"""CREATE TABLE IF NOT EXISTS artists (
+            id {_ID},
             name TEXT NOT NULL,
             group_name TEXT,
             part TEXT,
@@ -166,46 +139,53 @@ def init_db():
             phone TEXT,
             sns_instagram TEXT,
             trainee_id INTEGER,
-            memo TEXT,
-            FOREIGN KEY (trainee_id) REFERENCES trainees(id) ON DELETE SET NULL
-        )
-    """)
-
-    conn.commit()
-    conn.close()
+            memo TEXT
+        )""",
+    ]
+    with engine.begin() as conn:
+        for stmt in ddl:
+            conn.execute(text(stmt))
 
 
 # ---------- 공통 유틸 ----------
-def run_query(query, params=()):
-    conn = get_conn()
-    df = pd.read_sql_query(query, conn, params=params)
-    conn.close()
-    return df
+def run_query(sql, params=None):
+    with engine.connect() as conn:
+        return pd.read_sql_query(text(sql), conn, params=params or {})
 
 
-def execute(query, params=()):
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(query, params)
-    conn.commit()
-    last_id = cur.lastrowid
-    conn.close()
-    return last_id
+def execute(sql, params=None):
+    with engine.begin() as conn:
+        conn.execute(text(sql), params or {})
+
+
+def insert_returning_id(sql, params):
+    if IS_PG:
+        with engine.begin() as conn:
+            return conn.execute(text(sql + " RETURNING id"), params).scalar()
+    else:
+        with engine.begin() as conn:
+            res = conn.execute(text(sql), params)
+            return res.lastrowid
 
 
 def delete_row(table, row_id):
-    execute(f"DELETE FROM {table} WHERE id = ?", (row_id,))
+    allowed = {
+        "trainees", "evaluations", "training_sessions", "budget_items", "contracts",
+        "schedule_events", "content_calendar", "meeting_notes", "performances",
+        "settlements", "artists",
+    }
+    if table not in allowed:
+        raise ValueError("허용되지 않은 테이블입니다.")
+    execute(f"DELETE FROM {table} WHERE id = :id", {"id": int(row_id)})
 
 
 # ---------- Trainees ----------
 def add_trainee(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO trainees
         (name, birth_date, gender, part, join_date, status, phone, guardian_contact, memo)
-        VALUES (?,?,?,?,?,?,?,?,?)""",
-        (data["name"], data["birth_date"], data["gender"], data["part"],
-         data["join_date"], data["status"], data["phone"],
-         data["guardian_contact"], data["memo"])
+        VALUES (:name, :birth_date, :gender, :part, :join_date, :status, :phone, :guardian_contact, :memo)""",
+        data,
     )
 
 
@@ -214,18 +194,20 @@ def get_trainees():
 
 
 def add_evaluation(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO evaluations
         (trainee_id, eval_date, vocal_score, dance_score, rap_score, attitude_score, memo)
-        VALUES (?,?,?,?,?,?,?)""",
-        (data["trainee_id"], data["eval_date"], data["vocal_score"],
-         data["dance_score"], data["rap_score"], data["attitude_score"], data["memo"])
+        VALUES (:trainee_id, :eval_date, :vocal_score, :dance_score, :rap_score, :attitude_score, :memo)""",
+        data,
     )
 
 
 def get_evaluations(trainee_id=None):
     if trainee_id:
-        return run_query("SELECT * FROM evaluations WHERE trainee_id = ? ORDER BY eval_date DESC", (trainee_id,))
+        return run_query(
+            "SELECT * FROM evaluations WHERE trainee_id = :tid ORDER BY eval_date DESC",
+            {"tid": int(trainee_id)},
+        )
     return run_query("""
         SELECT e.*, t.name as trainee_name FROM evaluations e
         JOIN trainees t ON e.trainee_id = t.id
@@ -235,12 +217,11 @@ def get_evaluations(trainee_id=None):
 
 # ---------- Training Sessions ----------
 def add_session(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO training_sessions
         (session_date, start_time, end_time, category, trainer, room, participants, memo)
-        VALUES (?,?,?,?,?,?,?,?)""",
-        (data["session_date"], data["start_time"], data["end_time"], data["category"],
-         data["trainer"], data["room"], data["participants"], data["memo"])
+        VALUES (:session_date, :start_time, :end_time, :category, :trainer, :room, :participants, :memo)""",
+        data,
     )
 
 
@@ -250,11 +231,10 @@ def get_sessions():
 
 # ---------- Budget ----------
 def add_budget_item(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO budget_items (item_date, category, item_name, amount, direction, memo)
-        VALUES (?,?,?,?,?,?)""",
-        (data["item_date"], data["category"], data["item_name"], data["amount"],
-         data["direction"], data["memo"])
+        VALUES (:item_date, :category, :item_name, :amount, :direction, :memo)""",
+        data,
     )
 
 
@@ -264,11 +244,10 @@ def get_budget_items():
 
 # ---------- Contracts ----------
 def add_contract(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO contracts (party_name, contract_type, start_date, end_date, status, memo)
-        VALUES (?,?,?,?,?,?)""",
-        (data["party_name"], data["contract_type"], data["start_date"], data["end_date"],
-         data["status"], data["memo"])
+        VALUES (:party_name, :contract_type, :start_date, :end_date, :status, :memo)""",
+        data,
     )
 
 
@@ -278,10 +257,10 @@ def get_contracts():
 
 # ---------- Schedule ----------
 def add_schedule_event(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO schedule_events (event_date, title, category, owner, memo)
-        VALUES (?,?,?,?,?)""",
-        (data["event_date"], data["title"], data["category"], data["owner"], data["memo"])
+        VALUES (:event_date, :title, :category, :owner, :memo)""",
+        data,
     )
 
 
@@ -291,11 +270,10 @@ def get_schedule_events():
 
 # ---------- Content Calendar ----------
 def add_content(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO content_calendar (content_date, channel, content_type, title, status, memo)
-        VALUES (?,?,?,?,?,?)""",
-        (data["content_date"], data["channel"], data["content_type"], data["title"],
-         data["status"], data["memo"])
+        VALUES (:content_date, :channel, :content_type, :title, :status, :memo)""",
+        data,
     )
 
 
@@ -305,10 +283,10 @@ def get_content_calendar():
 
 # ---------- Meeting Notes ----------
 def add_meeting_note(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO meeting_notes (meeting_date, title, attendees, decisions, content)
-        VALUES (?,?,?,?,?)""",
-        (data["meeting_date"], data["title"], data["attendees"], data["decisions"], data["content"])
+        VALUES (:meeting_date, :title, :attendees, :decisions, :content)""",
+        data,
     )
 
 
@@ -318,12 +296,11 @@ def get_meeting_notes():
 
 # ---------- Performances (아티스트 공연) ----------
 def add_performance(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO performances
         (event_date, title, artist_name, venue, category, status, gross_fee, memo)
-        VALUES (?,?,?,?,?,?,?,?)""",
-        (data["event_date"], data["title"], data["artist_name"], data["venue"],
-         data["category"], data["status"], data["gross_fee"], data["memo"])
+        VALUES (:event_date, :title, :artist_name, :venue, :category, :status, :gross_fee, :memo)""",
+        data,
     )
 
 
@@ -332,19 +309,21 @@ def get_performances():
 
 
 def update_performance_status(performance_id, status):
-    execute("UPDATE performances SET status = ? WHERE id = ?", (status, performance_id))
+    execute(
+        "UPDATE performances SET status = :status WHERE id = :id",
+        {"status": status, "id": int(performance_id)},
+    )
 
 
 # ---------- Settlements (정산 관리) ----------
 def add_settlement(data: dict):
-    return execute(
+    return insert_returning_id(
         """INSERT INTO settlements
         (performance_id, settlement_date, gross_revenue, expenses, company_rate, artist_rate,
          company_amount, artist_amount, settlement_status, memo)
-        VALUES (?,?,?,?,?,?,?,?,?,?)""",
-        (data["performance_id"], data["settlement_date"], data["gross_revenue"], data["expenses"],
-         data["company_rate"], data["artist_rate"], data["company_amount"], data["artist_amount"],
-         data["settlement_status"], data["memo"])
+        VALUES (:performance_id, :settlement_date, :gross_revenue, :expenses, :company_rate, :artist_rate,
+         :company_amount, :artist_amount, :settlement_status, :memo)""",
+        data,
     )
 
 
@@ -358,18 +337,21 @@ def get_settlements():
 
 
 def update_settlement_status(settlement_id, status):
-    execute("UPDATE settlements SET settlement_status = ? WHERE id = ?", (status, settlement_id))
+    execute(
+        "UPDATE settlements SET settlement_status = :status WHERE id = :id",
+        {"status": status, "id": int(settlement_id)},
+    )
 
 
 # ---------- Artists (소속가수) ----------
 def add_artist(data: dict):
-    return execute(
+    payload = dict(data)
+    payload.setdefault("trainee_id", None)
+    return insert_returning_id(
         """INSERT INTO artists
         (name, group_name, part, birth_date, gender, debut_date, status, phone, sns_instagram, trainee_id, memo)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-        (data["name"], data["group_name"], data["part"], data["birth_date"], data["gender"],
-         data["debut_date"], data["status"], data["phone"], data["sns_instagram"],
-         data.get("trainee_id"), data["memo"])
+        VALUES (:name, :group_name, :part, :birth_date, :gender, :debut_date, :status, :phone, :sns_instagram, :trainee_id, :memo)""",
+        payload,
     )
 
 
@@ -378,4 +360,7 @@ def get_artists():
 
 
 def update_artist_status(artist_id, status):
-    execute("UPDATE artists SET status = ? WHERE id = ?", (status, artist_id))
+    execute(
+        "UPDATE artists SET status = :status WHERE id = :id",
+        {"status": status, "id": int(artist_id)},
+    )
