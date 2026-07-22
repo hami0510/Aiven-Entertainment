@@ -11,6 +11,7 @@ DB_PATH = os.path.join(os.path.dirname(__file__), "data", "aven.db")
 
 
 def get_conn():
+    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
