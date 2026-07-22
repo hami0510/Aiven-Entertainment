@@ -10,7 +10,6 @@ apply_style()
 sidebar_brand()
 
 page_header("💼", "경영관리", "재무 · 계약 · 일정 · 공연 · 정산")
-st.title("💼 경영관리 (재무·계약·일정·공연·정산)")
 
 tab_budget, tab_contract, tab_schedule, tab_performance, tab_settlement = st.tabs(
     ["예산/재무", "계약 관리", "일정 관리", "공연 관리", "정산 관리"]
@@ -148,6 +147,7 @@ with tab_performance:
     st.subheader("공연 현황")
     performances = db.get_performances()
     trainees = db.get_trainees()
+    artists = db.get_artists()
 
     if not performances.empty:
         c1, c2 = st.columns(2)
@@ -192,8 +192,13 @@ with tab_performance:
             event_date_p = st.date_input("공연일", value=date.today(), key="p_date")
             title_p = st.text_input("공연명")
         with c2:
-            if not trainees.empty:
-                artist_options = trainees["name"].tolist() + ["직접 입력"]
+            if not trainees.empty or not artists.empty:
+                artist_name_list = []
+                if not artists.empty:
+                    artist_name_list += artists["name"].tolist()
+                if not trainees.empty:
+                    artist_name_list += [n for n in trainees["name"].tolist() if n not in artist_name_list]
+                artist_options = artist_name_list + ["직접 입력"]
                 artist_choice = st.selectbox("아티스트", artist_options)
                 if artist_choice == "직접 입력":
                     artist_name = st.text_input("아티스트명 입력")
