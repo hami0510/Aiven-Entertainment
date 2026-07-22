@@ -10,7 +10,6 @@ apply_style()
 sidebar_brand()
 
 page_header("📅", "트레이닝 스케줄 관리", "세션 등록 및 일정 조회")
-st.title("📅 트레이닝 스케줄 관리")
 
 tab1, tab2 = st.tabs(["스케줄 목록", "세션 등록"])
 
@@ -44,11 +43,21 @@ with tab1:
         )
 
         st.markdown("---")
-        del_id = st.number_input("삭제할 세션 ID", min_value=0, step=1)
-        if st.button("세션 삭제"):
-            if del_id > 0:
+        st.subheader("🗑 세션 삭제")
+        del_map = dict(zip(
+            filtered["session_date"] + " " + filtered["start_time"] + " · " + filtered["category"] + " (ID:" + filtered["id"].astype(str) + ")",
+            filtered["id"]
+        ))
+        if del_map:
+            c1, c2 = st.columns([3, 1])
+            with c1:
+                del_pick = st.selectbox("삭제할 세션 선택", list(del_map.keys()), key="del_session_pick")
+            with c2:
+                confirm_del = st.checkbox("삭제 확인", key="confirm_del_session")
+            if st.button("🗑 선택한 세션 삭제", disabled=not confirm_del):
+                del_id = int(del_map[del_pick])
                 db.delete_row("training_sessions", del_id)
-                st.success(f"ID {del_id} 세션을 삭제했습니다.")
+                st.success(f"'{del_pick}' 세션을 삭제했습니다.")
                 st.rerun()
 
 with tab2:
