@@ -2,9 +2,14 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import db
+from style import apply_style, page_header, sidebar_brand
 
 st.set_page_config(page_title="연습생 관리", page_icon="👥", layout="wide")
 db.init_db()
+apply_style()
+sidebar_brand()
+
+page_header("👥", "연습생 육성·관리", "등록, 목록 관리, 평가 및 성장 추이")
 
 st.title("👥 연습생 육성·관리")
 
