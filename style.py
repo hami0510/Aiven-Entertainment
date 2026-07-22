@@ -168,5 +168,5 @@ def section_title(icon: str, text: str):
 
 def sidebar_brand():
     st.sidebar.markdown('<div style="padding: 18px 0 10px 0;">', unsafe_allow_html=True)
-    st.sidebar.image("assets/logo.png", width=150)
+    st.sidebar.image("logo.png", width=150)
     st.sidebar.markdown('</div>', unsafe_allow_html=True)
