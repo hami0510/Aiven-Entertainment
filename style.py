@@ -126,15 +126,16 @@ def apply_style():
 
 
 def page_header(icon: str, title: str, subtitle: str = ""):
-    st.markdown(f"""
-    <div class="aven-header">
-        <div class="icon">{icon}</div>
-        <div>
-            <p class="title">{title}</p>
-            <p class="subtitle">{subtitle}</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    html = (
+        '<div class="aven-header">'
+        f'<div class="icon">{icon}</div>'
+        '<div>'
+        f'<p class="title">{title}</p>'
+        f'<p class="subtitle">{subtitle}</p>'
+        '</div>'
+        '</div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def kpi_cards(cards):
@@ -144,15 +145,15 @@ def kpi_cards(cards):
     html = '<div class="kpi-grid">'
     for c in cards:
         color = ACCENTS.get(c.get("accent", "ink"), INK)
-        sub = f'<div class="kpi-sub">{c["sub"]}</div>' if c.get("sub") else ""
-        html += f"""
-        <div class="kpi-card" style="--accent:{color}">
-            <div class="kpi-label">{c.get('icon', '')} {c['label']}</div>
-            <div class="kpi-value">{c['value']}</div>
-            {sub}
-        </div>
-        """
-    html += "</div>"
+        sub_html = f'<div class="kpi-sub">{c["sub"]}</div>' if c.get("sub") else ""
+        html += (
+            f'<div class="kpi-card" style="--accent:{color}">'
+            f'<div class="kpi-label">{c.get("icon", "")} {c["label"]}</div>'
+            f'<div class="kpi-value">{c["value"]}</div>'
+            f'{sub_html}'
+            '</div>'
+        )
+    html += '</div>'
     st.markdown(html, unsafe_allow_html=True)
 
 
@@ -161,10 +162,11 @@ def section_title(icon: str, text: str):
 
 
 def sidebar_brand():
-    st.sidebar.markdown(f"""
-    <div style="padding: 18px 4px 22px 4px;">
-        <div style="font-size:23px; font-weight:900; letter-spacing:1px; color:{INK}; font-family:'Inter',sans-serif;">AVEN</div>
-        <div style="width:26px; height:2px; background:{INK}; margin:5px 0 7px 0;"></div>
-        <div style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:{MUTED}; text-transform:uppercase;">Entertainment</div>
-    </div>
-    """, unsafe_allow_html=True)
+    html = (
+        '<div style="padding: 18px 4px 22px 4px;">'
+        f'<div style="font-size:23px; font-weight:900; letter-spacing:1px; color:{INK}; font-family:\'Inter\',sans-serif;">AVEN</div>'
+        f'<div style="width:26px; height:2px; background:{INK}; margin:5px 0 7px 0;"></div>'
+        f'<div style="font-size:10px; font-weight:700; letter-spacing:2.2px; color:{MUTED}; text-transform:uppercase;">Entertainment</div>'
+        '</div>'
+    )
+    st.sidebar.markdown(html, unsafe_allow_html=True)
