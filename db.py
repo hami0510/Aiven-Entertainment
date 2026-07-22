@@ -121,6 +121,37 @@ def init_db():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS performances (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_date TEXT,
+            title TEXT,
+            artist_name TEXT,
+            venue TEXT,
+            category TEXT,
+            status TEXT,
+            gross_fee INTEGER,
+            memo TEXT
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS settlements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            performance_id INTEGER,
+            settlement_date TEXT,
+            gross_revenue INTEGER,
+            expenses INTEGER,
+            company_rate REAL,
+            artist_rate REAL,
+            company_amount INTEGER,
+            artist_amount INTEGER,
+            settlement_status TEXT,
+            memo TEXT,
+            FOREIGN KEY (performance_id) REFERENCES performances(id) ON DELETE SET NULL
+        )
+    """)
+
     conn.commit()
     conn.close()
 
@@ -264,3 +295,48 @@ def add_meeting_note(data: dict):
 
 def get_meeting_notes():
     return run_query("SELECT * FROM meeting_notes ORDER BY meeting_date DESC")
+
+
+# ---------- Performances (아티스트 공연) ----------
+def add_performance(data: dict):
+    return execute(
+        """INSERT INTO performances
+        (event_date, title, artist_name, venue, category, status, gross_fee, memo)
+        VALUES (?,?,?,?,?,?,?,?)""",
+        (data["event_date"], data["title"], data["artist_name"], data["venue"],
+         data["category"], data["status"], data["gross_fee"], data["memo"])
+    )
+
+
+def get_performances():
+    return run_query("SELECT * FROM performances ORDER BY event_date DESC")
+
+
+def update_performance_status(performance_id, status):
+    execute("UPDATE performances SET status = ? WHERE id = ?", (status, performance_id))
+
+
+# ---------- Settlements (정산 관리) ----------
+def add_settlement(data: dict):
+    return execute(
+        """INSERT INTO settlements
+        (performance_id, settlement_date, gross_revenue, expenses, company_rate, artist_rate,
+         company_amount, artist_amount, settlement_status, memo)
+        VALUES (?,?,?,?,?,?,?,?,?,?)""",
+        (data["performance_id"], data["settlement_date"], data["gross_revenue"], data["expenses"],
+         data["company_rate"], data["artist_rate"], data["company_amount"], data["artist_amount"],
+         data["settlement_status"], data["memo"])
+    )
+
+
+def get_settlements():
+    return run_query("""
+        SELECT s.*, p.title as performance_title, p.artist_name, p.event_date
+        FROM settlements s
+        LEFT JOIN performances p ON s.performance_id = p.id
+        ORDER BY s.settlement_date DESC
+    """)
+
+
+def update_settlement_status(settlement_id, status):
+    execute("UPDATE settlements SET settlement_status = ? WHERE id = ?", (status, settlement_id))

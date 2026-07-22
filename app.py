@@ -26,9 +26,11 @@ budget = db.get_budget_items()
 contracts = db.get_contracts()
 schedule = db.get_schedule_events()
 content = db.get_content_calendar()
+performances = db.get_performances()
+settlements = db.get_settlements()
 
 # ---------------- KPI 카드 ----------------
-col1, col2, col3, col4 = st.columns(4)
+col1, col2, col3, col4, col5, col6 = st.columns(6)
 
 with col1:
     active_trainees = len(trainees[trainees["status"] == "연습생"]) if not trainees.empty else 0
@@ -58,6 +60,20 @@ with col4:
         st.metric("진행 중 계약", f"{active_contracts}건")
     else:
         st.metric("진행 중 계약", "0건")
+
+with col5:
+    if not performances.empty:
+        upcoming_perf = len(performances[performances["status"].isin(["예정", "확정"])])
+        st.metric("예정 공연", f"{upcoming_perf}건")
+    else:
+        st.metric("예정 공연", "0건")
+
+with col6:
+    if not settlements.empty:
+        pending_settle = len(settlements[settlements["settlement_status"] == "미정산"])
+        st.metric("미정산 건수", f"{pending_settle}건")
+    else:
+        st.metric("미정산 건수", "0건")
 
 st.markdown("---")
 
