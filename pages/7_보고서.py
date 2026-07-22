@@ -9,7 +9,6 @@ apply_style()
 sidebar_brand()
 
 page_header("📝", "보고서 · 회의록", "회의록 작성 및 핵심 결정사항 관리")
-st.title("📝 보고서 · 회의록")
 
 tab1, tab2 = st.tabs(["회의록 목록", "회의록 작성"])
 
@@ -23,6 +22,11 @@ with tab1:
                 st.markdown(f"**핵심 결정사항**\n\n{row['decisions']}")
                 st.markdown(f"**참석자**: {row['attendees']}")
                 st.markdown(f"**상세 내용**\n\n{row['content']}")
+                st.markdown("---")
+                if st.button("🗑 이 회의록 삭제", key=f"del_note_{row['id']}"):
+                    db.delete_row("meeting_notes", int(row["id"]))
+                    st.success("회의록을 삭제했습니다.")
+                    st.rerun()
 
 with tab2:
     st.subheader("신규 회의록 작성")
