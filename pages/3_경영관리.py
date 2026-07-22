@@ -2,10 +2,14 @@ import streamlit as st
 import pandas as pd
 from datetime import date
 import db
+from style import apply_style, page_header, sidebar_brand
 
 st.set_page_config(page_title="경영관리", page_icon="💼", layout="wide")
 db.init_db()
+apply_style()
+sidebar_brand()
 
+page_header("💼", "경영관리", "재무 · 계약 · 일정 · 공연 · 정산")
 st.title("💼 경영관리 (재무·계약·일정·공연·정산)")
 
 tab_budget, tab_contract, tab_schedule, tab_performance, tab_settlement = st.tabs(
