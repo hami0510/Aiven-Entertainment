@@ -5,7 +5,7 @@ import db
 from style import apply_style, page_header, kpi_cards, section_title, sidebar_brand
 
 st.set_page_config(
-    page_title="Aven Entertainment 관리 시스템",
+    page_title="Aiven Entertainment 관리 시스템",
     page_icon="🎤",
     layout="wide",
     initial_sidebar_state="expanded",
