@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 import db
 from style import apply_style, page_header, sidebar_brand, section_title
+from security import delete_button
 
 st.set_page_config(page_title="소속가수 관리", page_icon="🌟", layout="wide")
 db.init_db()
@@ -72,16 +73,10 @@ with tab1:
         del_map = dict(zip(
             filtered["name"] + " (ID:" + filtered["id"].astype(str) + ")", filtered["id"]
         ))
-        c1, c2 = st.columns([3, 1])
-        with c1:
-            del_pick = st.selectbox("삭제할 소속가수 선택", list(del_map.keys()), key="del_artist_pick")
-        with c2:
-            confirm_del = st.checkbox("삭제 확인", key="confirm_del_artist")
-        if st.button("🗑 선택한 소속가수 삭제", type="secondary", disabled=not confirm_del):
-            del_id = int(del_map[del_pick])
-            db.delete_row("artists", del_id)
-            st.success(f"'{del_pick}' 소속가수를 삭제했습니다.")
-            st.rerun()
+        del_pick = st.selectbox("삭제할 소속가수 선택", list(del_map.keys()), key="del_artist_pick")
+        delete_button(
+            "🗑 선택한 소속가수 삭제", "artists", int(del_map[del_pick]), del_pick, key="del_artist_btn"
+        )
 
 # ---------------- 등록 ----------------
 with tab2:
