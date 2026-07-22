@@ -1,10 +1,14 @@
 import streamlit as st
 from datetime import date
 import db
+from style import apply_style, page_header, sidebar_brand
 
 st.set_page_config(page_title="보고서/회의록", page_icon="📝", layout="wide")
 db.init_db()
+apply_style()
+sidebar_brand()
 
+page_header("📝", "보고서 · 회의록", "회의록 작성 및 핵심 결정사항 관리")
 st.title("📝 보고서 · 회의록")
 
 tab1, tab2 = st.tabs(["회의록 목록", "회의록 작성"])
