@@ -85,17 +85,35 @@ def apply_style():
             color: #FFFFFF !important;
         }}
 
-        /* ---------- 헤더 ---------- */
+        /* ---------- 헤더 (에디토리얼 스타일) ---------- */
         .aven-header {{
-            display: flex; align-items: center; gap: 14px;
-            padding: 20px 24px;
-            border-radius: 10px;
-            background: {INK};
-            color: white; margin-bottom: 24px;
+            display: flex; align-items: flex-start; gap: 16px;
+            padding: 6px 0 20px 0;
+            border-bottom: 1.5px solid {INK};
+            margin-bottom: 26px;
         }}
-        .aven-header .icon {{ font-size: 26px; line-height: 1; }}
-        .aven-header .title {{ font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.2px; }}
-        .aven-header .subtitle {{ font-size: 12.5px; color: #B8B8B8; margin: 3px 0 0 0; }}
+        .aven-header .icon {{
+            width: 46px; height: 46px; min-width: 46px;
+            border-radius: 50%;
+            background: {INK};
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; line-height: 1;
+        }}
+        .aven-header .eyebrow {{
+            font-size: 10.5px; font-weight: 800; letter-spacing: 2px;
+            color: {MUTED}; text-transform: uppercase; margin: 2px 0 4px 0;
+        }}
+        .aven-header .title {{
+            font-size: 26px; font-weight: 900; color: {INK};
+            margin: 0; letter-spacing: -0.3px; line-height: 1.15;
+        }}
+        .aven-header .underline {{
+            width: 34px; height: 3px; background: {INK}; margin: 9px 0 8px 0;
+        }}
+        .aven-header .subtitle {{
+            font-size: 13px; color: {MUTED}; margin: 0;
+        }}
 
         /* ---------- KPI 카드 ---------- */
         .kpi-grid {{
@@ -159,6 +177,17 @@ def apply_style():
         }}
 
         hr {{ border-color: {BORDER_SOFT} !important; }}
+
+        /* 사이드바 내부 여백 압축 (스크롤 없이 다 보이도록) */
+        [data-testid="stSidebarUserContent"] hr {{
+            margin: 6px 0 !important;
+        }}
+        [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {{
+            gap: 0.35rem !important;
+        }}
+        [data-testid="stSidebarUserContent"] {{
+            padding-top: 0.5rem !important;
+        }}
 
         /* ---------- 캘린더 ---------- */
         .cal-nav-title {{
@@ -252,7 +281,9 @@ def page_header(icon: str, title: str, subtitle: str = ""):
         '<div class="aven-header">'
         f'<div class="icon">{icon}</div>'
         '<div>'
-        f'<p class="title">{title}</p>'
+        '<div class="eyebrow">AIVEN ENTERTAINMENT</div>'
+        f'<h1 class="title">{title}</h1>'
+        '<div class="underline"></div>'
         f'<p class="subtitle">{subtitle}</p>'
         '</div>'
         '</div>'
@@ -343,15 +374,15 @@ def sidebar_brand():
             today_items.append(("📅", r.get("category", "트레이닝")))
 
     today_html = (
-        '<div style="margin:10px 4px 4px 4px; padding:10px 12px; border:1px solid #E4E4E4; '
+        '<div style="margin:6px 4px 2px 4px; padding:8px 10px; border:1px solid #E4E4E4; '
         'border-radius:8px; background:#FCFCFC;">'
         '<div style="font-size:11px; font-weight:800; color:#767676; text-transform:uppercase; '
-        'margin-bottom:5px;">📌 오늘 일정</div>'
+        'margin-bottom:3px;">📌 오늘 일정</div>'
     )
     if today_items:
         for icon, title in today_items[:3]:
             short = title if len(title) <= 14 else title[:14] + "…"
-            today_html += f'<div style="font-size:12px; color:#0D0D0D; margin-bottom:2px;">{icon} {short}</div>'
+            today_html += f'<div style="font-size:12px; color:#0D0D0D; margin-bottom:1px;">{icon} {short}</div>'
         if len(today_items) > 3:
             today_html += f'<div style="font-size:11px; color:#ADADAD;">+{len(today_items) - 3}건 더</div>'
     else:
@@ -361,7 +392,7 @@ def sidebar_brand():
 
     # ---- 3. 빠른 검색 ----
     st.sidebar.markdown(
-        '<div style="margin:12px 4px 2px 4px; font-size:11px; font-weight:800; color:#767676; '
+        '<div style="margin:4px 4px 2px 4px; font-size:11px; font-weight:800; color:#767676; '
         'text-transform:uppercase;">🔍 빠른 검색</div>',
         unsafe_allow_html=True,
     )
@@ -386,18 +417,18 @@ def sidebar_brand():
             st.sidebar.caption("검색 결과가 없습니다.")
 
     # ---- SNS 계정 ----
-    html = '<div style="padding: 14px 4px 4px 4px;">'
+    html = '<div style="padding: 6px 4px 0 4px;">'
     for account in SIDEBAR_ACCOUNTS:
         html += (
-            '<div style="margin-bottom:18px;">'
-            f'<div style="font-size:12.5px; font-weight:800; letter-spacing:0.4px; color:#767676; '
-            f'text-transform:uppercase; margin-bottom:8px;">{account["name"]}</div>'
-            '<div style="display:flex; gap:16px;">'
+            '<div style="margin-bottom:8px;">'
+            f'<div style="font-size:11px; font-weight:800; letter-spacing:0.4px; color:#767676; '
+            f'text-transform:uppercase; margin-bottom:4px;">{account["name"]}</div>'
+            '<div style="display:flex; gap:12px;">'
         )
         for link in account["links"]:
             html += (
                 f'<a href="{link["url"]}" target="_blank" title="{link["label"]}" '
-                'style="text-decoration:none; font-size:26px; line-height:1;">'
+                'style="text-decoration:none; font-size:20px; line-height:1;">'
                 f'{link["icon"]}</a>'
             )
         html += '</div></div>'
