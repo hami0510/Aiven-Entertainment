@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
+from datetime import date, timedelta
 import db
 from style import apply_style, page_header, sidebar_brand
 from security import delete_button
@@ -148,10 +148,16 @@ with tab_schedule:
 
     st.markdown("---")
     st.subheader("일정 추가")
+    multi_day_sched = st.checkbox("여러 날에 걸친 일정으로 등록 (시작일~종료일)", key="sched_multi_day")
     with st.form("add_schedule_form", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         with c1:
-            event_date = st.date_input("날짜", value=date.today(), key="s_date")
+            if multi_day_sched:
+                date_range = st.date_input(
+                    "시작일 ~ 종료일", value=(date.today(), date.today()), key="s_date_range"
+                )
+            else:
+                event_date = st.date_input("날짜", value=date.today(), key="s_date")
         with c2:
             title = st.text_input("제목")
             category = st.selectbox("구분", ["오디션/캐스팅", "데뷔/컴백", "촬영", "공연/행사", "미팅", "기타"])
@@ -160,12 +166,33 @@ with tab_schedule:
         memo = st.text_area("메모", key="s_memo")
 
         if st.form_submit_button("추가", type="primary"):
-            db.add_schedule_event({
-                "event_date": event_date.isoformat(), "title": title, "category": category,
-                "owner": owner, "memo": memo
-            })
-            st.success("일정이 추가되었습니다.")
-            st.rerun()
+            if multi_day_sched:
+                if isinstance(date_range, tuple) and len(date_range) == 2:
+                    start_d, end_d = date_range
+                else:
+                    start_d = end_d = date_range
+                if start_d > end_d:
+                    st.error("시작일이 종료일보다 늦을 수 없습니다.")
+                elif not title:
+                    st.error("제목은 필수입니다.")
+                else:
+                    n_days = (end_d - start_d).days + 1
+                    cur = start_d
+                    while cur <= end_d:
+                        db.add_schedule_event({
+                            "event_date": cur.isoformat(), "title": title, "category": category,
+                            "owner": owner, "memo": memo
+                        })
+                        cur += timedelta(days=1)
+                    st.success(f"'{title}' 일정을 {start_d.isoformat()} ~ {end_d.isoformat()} ({n_days}일간) 등록했습니다.")
+                    st.rerun()
+            else:
+                db.add_schedule_event({
+                    "event_date": event_date.isoformat(), "title": title, "category": category,
+                    "owner": owner, "memo": memo
+                })
+                st.success("일정이 추가되었습니다.")
+                st.rerun()
 
     if not schedule.empty:
         st.markdown("---")
