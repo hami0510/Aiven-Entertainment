@@ -129,6 +129,12 @@ def apply_style():
             border-radius: 8px;
             padding: 18px 18px 16px 18px;
             overflow: hidden;
+            transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+        }}
+        a.kpi-card:hover {{
+            box-shadow: 0 4px 14px rgba(13, 13, 13, 0.10);
+            transform: translateY(-2px);
+            border-color: {INK};
         }}
         .kpi-card::before {{
             content: "";
@@ -332,18 +338,23 @@ def page_header(icon: str, title: str, subtitle: str = ""):
 
 def kpi_cards(cards):
     """
-    cards: [{ "label": str, "value": str, "icon": str, "accent": "ink|alert"(optional, default ink), "sub": str(optional) }, ...]
+    cards: [{ "label": str, "value": str, "icon": str, "accent": "ink|alert"(optional, default ink),
+              "sub": str(optional), "link": str(optional, 클릭 시 이동할 페이지 URL 경로) }, ...]
     """
     html = '<div class="kpi-grid">'
     for c in cards:
         color = ACCENTS.get(c.get("accent", "ink"), INK)
         sub_html = f'<div class="kpi-sub">{c["sub"]}</div>' if c.get("sub") else ""
+        link = c.get("link")
+        tag = "a" if link else "div"
+        href_attr = f' href="{link}" target="_self"' if link else ""
+        extra_style = " text-decoration:none; color:inherit; cursor:pointer;" if link else ""
         html += (
-            f'<div class="kpi-card" style="--accent:{color}">'
+            f'<{tag}{href_attr} class="kpi-card" style="--accent:{color};{extra_style}">'
             f'<div class="kpi-label">{c.get("icon", "")} {c["label"]}</div>'
             f'<div class="kpi-value">{c["value"]}</div>'
             f'{sub_html}'
-            '</div>'
+            f'</{tag}>'
         )
     html += '</div>'
     st.markdown(html, unsafe_allow_html=True)
