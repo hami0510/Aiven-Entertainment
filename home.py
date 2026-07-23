@@ -71,28 +71,29 @@ if "cal_year" not in st.session_state:
     st.session_state.cal_year = date.today().year
     st.session_state.cal_month = date.today().month
 
-nav1, nav2, nav3 = st.columns([1, 6, 1])
-with nav1:
-    if st.button("◀", key="cal_prev", use_container_width=True):
-        m = st.session_state.cal_month - 1
-        y = st.session_state.cal_year
-        if m < 1:
-            m, y = 12, y - 1
-        st.session_state.cal_month, st.session_state.cal_year = m, y
-        st.rerun()
-with nav3:
-    if st.button("▶", key="cal_next", use_container_width=True):
-        m = st.session_state.cal_month + 1
-        y = st.session_state.cal_year
-        if m > 12:
-            m, y = 1, y + 1
-        st.session_state.cal_month, st.session_state.cal_year = m, y
-        st.rerun()
-with nav2:
-    st.markdown(
-        f'<div class="cal-nav-title">{st.session_state.cal_year}년 {st.session_state.cal_month}월</div>',
-        unsafe_allow_html=True,
-    )
+with st.container(key="cal_nav_wrap"):
+    nav1, nav2, nav3 = st.columns([1, 6, 1])
+    with nav1:
+        if st.button("◀", key="cal_prev", use_container_width=True):
+            m = st.session_state.cal_month - 1
+            y = st.session_state.cal_year
+            if m < 1:
+                m, y = 12, y - 1
+            st.session_state.cal_month, st.session_state.cal_year = m, y
+            st.rerun()
+    with nav3:
+        if st.button("▶", key="cal_next", use_container_width=True):
+            m = st.session_state.cal_month + 1
+            y = st.session_state.cal_year
+            if m > 12:
+                m, y = 1, y + 1
+            st.session_state.cal_month, st.session_state.cal_year = m, y
+            st.rerun()
+    with nav2:
+        st.markdown(
+            f'<div class="cal-nav-title">{st.session_state.cal_year}년 {st.session_state.cal_month}월</div>',
+            unsafe_allow_html=True,
+        )
 
 # ---------------- 이벤트 취합 ----------------
 events_by_date = {}
