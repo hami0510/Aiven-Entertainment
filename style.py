@@ -218,6 +218,35 @@ def apply_style():
             border: 2px solid {INK} !important;
             font-weight: 800 !important;
         }}
+
+        /* 캘린더 그리드: 모바일에서도 Streamlit이 세로로 쌓지 않고 7열을 유지하도록 강제 */
+        .st-key-cal_grid_wrap [data-testid="stHorizontalBlock"] {{
+            flex-wrap: nowrap !important;
+            gap: 3px !important;
+        }}
+        .st-key-cal_grid_wrap [data-testid="stColumn"] {{
+            width: calc(100% / 7) !important;
+            flex: 1 1 calc(100% / 7) !important;
+            min-width: 0 !important;
+            padding: 0 1px !important;
+        }}
+        .st-key-cal_grid_wrap button {{
+            padding: 4px 2px !important;
+            font-size: 11px !important;
+            min-height: 40px !important;
+            white-space: normal !important;
+            line-height: 1.15 !important;
+        }}
+        @media (max-width: 480px) {{
+            .st-key-cal_grid_wrap button {{
+                font-size: 9px !important;
+                padding: 3px 1px !important;
+                min-height: 32px !important;
+            }}
+            .st-key-cal_grid_wrap [data-testid="stCaptionContainer"] {{
+                display: none !important;
+            }}
+        }}
     </style>
     """
     # 줄바꿈이 있으면 마크다운이 코드블록/일반 텍스트로 오인할 수 있어
