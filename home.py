@@ -177,7 +177,7 @@ with st.container(key="cal_grid_wrap"):
                 if day == 0:
                     st.write("")
                     continue
-               d_obj = date(st.session_state.cal_year, st.session_state.cal_month, day)
+                d_obj = date(st.session_state.cal_year, st.session_state.cal_month, day)
                 evts = events_by_date.get(d_obj.isoformat(), [])
                 is_today = d_obj == today
                 is_selected = st.session_state.get("selected_cal_date") == d_obj.isoformat()
