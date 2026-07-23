@@ -161,8 +161,9 @@ def apply_style():
         }}
         .cal-more {{ font-size: 9.5px; color: {MUTED}; }}
 
-        /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
-        .st-key-cal_today_wrap button {{
+       /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
+        .st-key-cal_today_btn button,
+        button.st-key-cal_today_btn {{
             border: 2px solid {INK} !important;
             font-weight: 800 !important;
         }}
