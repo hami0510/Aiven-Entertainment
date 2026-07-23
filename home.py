@@ -1,8 +1,8 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 import db
-from style import apply_style, page_header, kpi_cards, section_title, sidebar_brand, month_calendar
+from style import apply_style, page_header, kpi_cards, section_title, sidebar_brand
 
 st.set_page_config(
     page_title="Aiven Entertainment 관리 시스템",
@@ -66,7 +66,7 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # ==================== 캘린더 ====================
 section_title("🗓️", "일정 캘린더")
-st.caption("경영관리의 일정·공연·트레이닝 세션과 생일·데뷔 기념일을 한눈에 확인할 수 있습니다.")
+st.caption("날짜를 클릭하면 그 날의 일정을 확인하고 바로 등록할 수 있습니다.")
 
 if "cal_year" not in st.session_state:
     st.session_state.cal_year = date.today().year
@@ -95,7 +95,7 @@ with nav2:
         unsafe_allow_html=True,
     )
 
-# 캘린더용 이벤트 취합: 일정 + 공연 + 트레이닝 세션
+# ---------------- 이벤트 취합 ----------------
 events_by_date = {}
 
 
@@ -122,7 +122,6 @@ _cal_year = st.session_state.cal_year
 
 
 def _add_yearly_event(month_day_source, icon, title):
-    """month_day_source: 'YYYY-MM-DD' 형식의 원본 날짜에서 월/일만 가져와 표시 중인 연도로 치환"""
     if not month_day_source:
         return
     try:
@@ -130,7 +129,7 @@ def _add_yearly_event(month_day_source, icon, title):
         key = date(_cal_year, d.month, d.day).isoformat()
         _add_event(key, icon, title)
     except (ValueError, TypeError):
-        pass  # 2/29 등 표시 연도에 존재하지 않는 날짜는 건너뜀
+        pass
 
 
 if not trainees.empty:
@@ -150,12 +149,151 @@ if not artists.empty:
             _add_yearly_event(debut, "🎉", label)
 
 st.caption("🗓️ 일정 · 🎤 공연 · 📅 트레이닝 · 🎂 생일 · 🎉 데뷔 기념일")
-month_calendar(events_by_date, st.session_state.cal_year, st.session_state.cal_month)
+
+# ---------------- 클릭 가능한 캘린더 그리드 ----------------
+import calendar as _cal
+
+cal_obj = _cal.Calendar(firstweekday=6)  # 일요일 시작
+weeks = cal_obj.monthdayscalendar(st.session_state.cal_year, st.session_state.cal_month)
+days_kr = ["일", "월", "화", "수", "목", "금", "토"]
+
+head_cols = st.columns(7)
+for i, d in enumerate(days_kr):
+    with head_cols[i]:
+        color = "color:#D64545;" if i == 0 else "color:#767676;"
+        st.markdown(
+            f"<div style='text-align:center;font-size:11.5px;font-weight:700;{color}'>{d}</div>",
+            unsafe_allow_html=True,
+        )
+
+today = date.today()
+for week in weeks:
+    row_cols = st.columns(7)
+    for i, day in enumerate(week):
+        with row_cols[i]:
+            if day == 0:
+                st.write("")
+                continue
+            d_obj = date(st.session_state.cal_year, st.session_state.cal_month, day)
+            evts = events_by_date.get(d_obj.isoformat(), [])
+            label = f"{day}" + (f" · {len(evts)}건" if evts else "")
+            btn_type = "primary" if d_obj == today else "secondary"
+            if st.button(label, key=f"caldate_{d_obj.isoformat()}", use_container_width=True, type=btn_type):
+                st.session_state.selected_cal_date = d_obj.isoformat()
+                st.rerun()
+            if evts:
+                first_icon, first_title = evts[0]
+                short = first_title if len(first_title) <= 6 else first_title[:6] + "…"
+                extra = f" 외{len(evts) - 1}건" if len(evts) > 1 else ""
+                st.caption(f"{first_icon} {short}{extra}")
 
 if st.button("오늘로 이동", key="cal_today"):
     st.session_state.cal_year = date.today().year
     st.session_state.cal_month = date.today().month
     st.rerun()
+
+# ---------------- 선택한 날짜: 조회 + 빠른 등록 ----------------
+st.markdown("---")
+sel = st.session_state.get("selected_cal_date")
+if sel:
+    sel_date = date.fromisoformat(sel)
+    section_title("📌", f"{sel_date.strftime('%Y년 %m월 %d일')} 일정")
+
+    evts = events_by_date.get(sel, [])
+    if evts:
+        for icon, title in evts:
+            st.write(f"{icon} {title}")
+    else:
+        st.caption("이 날짜에 등록된 일정이 없습니다.")
+
+    with st.expander("➕ 이 날짜에 새 항목 등록", expanded=False):
+        add_type = st.radio(
+            "등록 유형", ["일정", "공연", "트레이닝 세션"], horizontal=True, key="quickadd_type"
+        )
+
+        if add_type == "일정":
+            with st.form("quickadd_schedule", clear_on_submit=True):
+                c1, c2 = st.columns(2)
+                with c1:
+                    q_title = st.text_input("제목", key="qa_sched_title")
+                    q_category = st.selectbox(
+                        "구분", ["오디션/캐스팅", "데뷔/컴백", "촬영", "공연/행사", "미팅", "기타"], key="qa_sched_cat"
+                    )
+                with c2:
+                    q_owner = st.text_input("담당자", key="qa_sched_owner")
+                q_memo = st.text_area("메모", key="qa_sched_memo")
+                if st.form_submit_button("등록", type="primary"):
+                    if not q_title:
+                        st.error("제목은 필수입니다.")
+                    else:
+                        db.add_schedule_event({
+                            "event_date": sel, "title": q_title, "category": q_category,
+                            "owner": q_owner, "memo": q_memo
+                        })
+                        st.success("일정이 등록되었습니다.")
+                        st.rerun()
+
+        elif add_type == "공연":
+            artist_name_list = []
+            if not artists.empty:
+                artist_name_list += artists["name"].tolist()
+            if not trainees.empty:
+                artist_name_list += [n for n in trainees["name"].tolist() if n not in artist_name_list]
+            artist_options = artist_name_list + ["직접 입력"]
+
+            with st.form("quickadd_perf", clear_on_submit=True):
+                c1, c2 = st.columns(2)
+                with c1:
+                    q_artist_choice = st.selectbox("아티스트", artist_options, key="qa_perf_artist_choice")
+                    if q_artist_choice == "직접 입력":
+                        q_artist = st.text_input("아티스트명 입력", key="qa_perf_artist_text")
+                    else:
+                        q_artist = q_artist_choice
+                    q_title_p = st.text_input("공연명", key="qa_perf_title")
+                with c2:
+                    q_venue = st.text_input("장소", key="qa_perf_venue")
+                    q_category_p = st.selectbox(
+                        "공연 유형", ["단독 공연", "페스티벌", "행사/축제", "방송 출연", "팬미팅", "기타"], key="qa_perf_cat"
+                    )
+                    q_fee = st.number_input("개런티(원)", min_value=0, step=100000, key="qa_perf_fee")
+                if st.form_submit_button("등록", type="primary"):
+                    if not q_title_p or not q_artist:
+                        st.error("공연명과 아티스트명은 필수입니다.")
+                    else:
+                        db.add_performance({
+                            "event_date": sel, "title": q_title_p, "artist_name": q_artist,
+                            "venue": q_venue, "category": q_category_p, "status": "예정",
+                            "gross_fee": int(q_fee), "memo": ""
+                        })
+                        st.success("공연이 등록되었습니다.")
+                        st.rerun()
+
+        else:  # 트레이닝 세션
+            with st.form("quickadd_session", clear_on_submit=True):
+                c1, c2 = st.columns(2)
+                with c1:
+                    q_start = st.time_input("시작 시간", value=time(14, 0), key="qa_sess_start")
+                    q_end = st.time_input("종료 시간", value=time(16, 0), key="qa_sess_end")
+                with c2:
+                    q_cat_s = st.selectbox(
+                        "카테고리", ["보컬", "댄스", "랩", "인성교육", "체력/컨디셔닝", "종합/합주", "기타"], key="qa_sess_cat"
+                    )
+                    q_trainer = st.text_input("담당 강사", key="qa_sess_trainer")
+                q_participants = st.multiselect(
+                    "참여 연습생", trainees["name"].tolist() if not trainees.empty else [], key="qa_sess_part"
+                )
+                if st.form_submit_button("등록", type="primary"):
+                    db.add_session({
+                        "session_date": sel, "start_time": q_start.strftime("%H:%M"),
+                        "end_time": q_end.strftime("%H:%M"), "category": q_cat_s,
+                        "trainer": q_trainer, "room": "", "participants": ", ".join(q_participants), "memo": ""
+                    })
+                    st.success("트레이닝 세션이 등록되었습니다.")
+                    st.rerun()
+
+    if st.button("날짜 선택 닫기", key="close_quickadd"):
+        del st.session_state["selected_cal_date"]
+        st.rerun()
 
 st.markdown("---")
 
