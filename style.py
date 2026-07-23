@@ -18,6 +18,36 @@ ACCENTS = {
     "alert": ALERT,
 }
 
+# 사이드바 하단에 표시할 SNS 계정. 계정별로 그룹지어 표시됩니다.
+SIDEBAR_ACCOUNTS = [
+    {
+        "name": "Aiven Official",
+        "links": [
+            {"icon": "📷", "label": "Instagram", "url": "https://www.instagram.com/aiven.official"},
+            {"icon": "🎵", "label": "TikTok", "url": "https://www.tiktok.com/@aiven.official"},
+            {"icon": "▶️", "label": "YouTube", "url": "https://youtube.com/@aivenent"},
+            {"icon": "✕", "label": "X", "url": "https://x.com/aivenent"},
+        ],
+    },
+    {
+        "name": "Hytes",
+        "links": [
+            {"icon": "📷", "label": "Instagram", "url": "https://www.instagram.com/official.hytes"},
+            {"icon": "🎵", "label": "TikTok", "url": "https://www.tiktok.com/@hytes.official"},
+            {"icon": "▶️", "label": "YouTube", "url": "https://youtube.com/@hytesofficial"},
+            {"icon": "✕", "label": "X", "url": "https://x.com/hytesofficial"},
+        ],
+    },
+    {
+        "name": "리채",
+        "links": [
+            {"icon": "📷", "label": "Instagram", "url": "https://www.instagram.com/leechaeisasa"},
+            {"icon": "▶️", "label": "YouTube", "url": "https://www.youtube.com/@leechaezip"},
+            {"icon": "🎵", "label": "TikTok", "url": "https://www.tiktok.com/@leechae__official"},
+        ],
+    },
+]
+
 
 def apply_style():
     css = f"""
@@ -161,7 +191,7 @@ def apply_style():
         }}
         .cal-more {{ font-size: 9.5px; color: {MUTED}; }}
 
-       /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
+        /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
         .st-key-cal_today_btn button,
         button.st-key-cal_today_btn {{
             border: 2px solid {INK} !important;
@@ -252,3 +282,23 @@ def section_title(icon: str, text: str):
 
 def sidebar_brand():
     st.logo("logo.png", size="large")
+
+    html = '<div style="padding: 10px 4px 4px 4px;">'
+    for account in SIDEBAR_ACCOUNTS:
+        html += (
+            '<div style="margin-bottom:12px;">'
+            f'<div style="font-size:11px; font-weight:800; letter-spacing:0.4px; color:#767676; '
+            f'text-transform:uppercase; margin-bottom:5px;">{account["name"]}</div>'
+            '<div style="display:flex; gap:12px;">'
+        )
+        for link in account["links"]:
+            html += (
+                f'<a href="{link["url"]}" target="_blank" title="{link["label"]}" '
+                'style="text-decoration:none; font-size:16px; line-height:1;">'
+                f'{link["icon"]}</a>'
+            )
+        html += '</div></div>'
+    html += '</div>'
+
+    st.sidebar.markdown("---")
+    st.sidebar.markdown(html, unsafe_allow_html=True)
