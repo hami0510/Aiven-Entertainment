@@ -16,8 +16,6 @@ db.init_db()
 apply_style()
 
 sidebar_brand()
-st.sidebar.markdown("---")
-st.sidebar.info("왼쪽 메뉴에서 세부 관리 페이지로 이동하세요.")
 
 page_header("📊", "통합 대시보드", f"오늘 날짜: {date.today().strftime('%Y년 %m월 %d일')}")
 
