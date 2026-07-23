@@ -283,18 +283,18 @@ def section_title(icon: str, text: str):
 def sidebar_brand():
     st.logo("logo.png", size="large")
 
-    html = '<div style="padding: 10px 4px 4px 4px;">'
+    html = '<div style="padding: 14px 4px 4px 4px;">'
     for account in SIDEBAR_ACCOUNTS:
         html += (
-            '<div style="margin-bottom:12px;">'
-            f'<div style="font-size:11px; font-weight:800; letter-spacing:0.4px; color:#767676; '
-            f'text-transform:uppercase; margin-bottom:5px;">{account["name"]}</div>'
-            '<div style="display:flex; gap:12px;">'
+            '<div style="margin-bottom:18px;">'
+            f'<div style="font-size:12.5px; font-weight:800; letter-spacing:0.4px; color:#767676; '
+            f'text-transform:uppercase; margin-bottom:8px;">{account["name"]}</div>'
+            '<div style="display:flex; gap:16px;">'
         )
         for link in account["links"]:
             html += (
                 f'<a href="{link["url"]}" target="_blank" title="{link["label"]}" '
-                'style="text-decoration:none; font-size:16px; line-height:1;">'
+                'style="text-decoration:none; font-size:26px; line-height:1;">'
                 f'{link["icon"]}</a>'
             )
         html += '</div></div>'
