@@ -177,6 +177,11 @@ def _clear_cache():
             pass
 
 
+def refresh_cache():
+    """사이드바의 '데이터 새로고침' 버튼 등에서 캐시를 강제로 비울 때 사용합니다."""
+    _clear_cache()
+
+
 # ---------- 공통 유틸 ----------
 def run_query(sql, params=None):
     params = params or {}
