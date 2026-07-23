@@ -212,14 +212,11 @@ def apply_style():
         }}
         .cal-more {{ font-size: 9.5px; color: {MUTED}; }}
 
-    /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조, 글자는 더 작게 */
+    /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
         .st-key-cal_today_btn button,
         button.st-key-cal_today_btn {{
             border: 2px solid {INK} !important;
             font-weight: 800 !important;
-            font-size: 9px !important;
-            white-space: nowrap !important;
-            padding: 2px 1px !important;
         }}
 
         /* 캘린더 상단 이전/다음 네비게이션도 모바일에서 가로 유지 */
@@ -256,10 +253,7 @@ def apply_style():
                 padding: 3px 1px !important;
                 min-height: 32px !important;
             }}
-            .st-key-cal_today_btn button {{
-                font-size: 7.5px !important;
-            }}
-            .st-key-cal_grid_wrap [data-testid="stCaptionContainer"] {{
+           .st-key-cal_grid_wrap [data-testid="stCaptionContainer"] {{
                 display: none !important;
             }}
         }}
