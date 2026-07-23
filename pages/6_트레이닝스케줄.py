@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, time
+from datetime import date, time, timedelta
 import db
 from style import apply_style, page_header, sidebar_brand
 from security import delete_button
@@ -58,10 +58,16 @@ with tab1:
 with tab2:
     st.subheader("신규 트레이닝 세션 등록")
     trainees = db.get_trainees()
+    multi_day_session = st.checkbox("여러 날에 걸쳐 매일 같은 시간에 등록 (시작일~종료일)", key="session_multi_day")
     with st.form("add_session_form", clear_on_submit=True):
         c1, c2, c3 = st.columns(3)
         with c1:
-            session_date = st.date_input("날짜", value=date.today())
+            if multi_day_session:
+                date_range = st.date_input(
+                    "시작일 ~ 종료일", value=(date.today(), date.today()), key="sess_date_range"
+                )
+            else:
+                session_date = st.date_input("날짜", value=date.today())
             start_t = st.time_input("시작 시간", value=time(14, 0))
         with c2:
             end_t = st.time_input("종료 시간", value=time(16, 0))
@@ -79,15 +85,40 @@ with tab2:
         memo = st.text_area("메모")
 
         if st.form_submit_button("등록", type="primary"):
-            db.add_session({
-                "session_date": session_date.isoformat(),
-                "start_time": start_t.strftime("%H:%M"),
-                "end_time": end_t.strftime("%H:%M"),
-                "category": category,
-                "trainer": trainer,
-                "room": room,
-                "participants": ", ".join(participants),
-                "memo": memo,
-            })
-            st.success("트레이닝 세션이 등록되었습니다.")
-            st.rerun()
+            if multi_day_session:
+                if isinstance(date_range, tuple) and len(date_range) == 2:
+                    start_d, end_d = date_range
+                else:
+                    start_d = end_d = date_range
+                if start_d > end_d:
+                    st.error("시작일이 종료일보다 늦을 수 없습니다.")
+                else:
+                    n_days = (end_d - start_d).days + 1
+                    cur = start_d
+                    while cur <= end_d:
+                        db.add_session({
+                            "session_date": cur.isoformat(),
+                            "start_time": start_t.strftime("%H:%M"),
+                            "end_time": end_t.strftime("%H:%M"),
+                            "category": category,
+                            "trainer": trainer,
+                            "room": room,
+                            "participants": ", ".join(participants),
+                            "memo": memo,
+                        })
+                        cur += timedelta(days=1)
+                    st.success(f"트레이닝 세션을 {start_d.isoformat()} ~ {end_d.isoformat()} ({n_days}일간) 등록했습니다.")
+                    st.rerun()
+            else:
+                db.add_session({
+                    "session_date": session_date.isoformat(),
+                    "start_time": start_t.strftime("%H:%M"),
+                    "end_time": end_t.strftime("%H:%M"),
+                    "category": category,
+                    "trainer": trainer,
+                    "room": room,
+                    "participants": ", ".join(participants),
+                    "memo": memo,
+                })
+                st.success("트레이닝 세션이 등록되었습니다.")
+                st.rerun()
