@@ -212,11 +212,22 @@ def apply_style():
         }}
         .cal-more {{ font-size: 9.5px; color: {MUTED}; }}
 
-        /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
+    /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조, 글자는 더 작게 */
         .st-key-cal_today_btn button,
         button.st-key-cal_today_btn {{
             border: 2px solid {INK} !important;
             font-weight: 800 !important;
+            font-size: 9px !important;
+            white-space: nowrap !important;
+            padding: 2px 1px !important;
+        }}
+
+        /* 캘린더 상단 이전/다음 네비게이션도 모바일에서 가로 유지 */
+        .st-key-cal_nav_wrap [data-testid="stHorizontalBlock"] {{
+            flex-wrap: nowrap !important;
+        }}
+        .st-key-cal_nav_wrap [data-testid="stColumn"] {{
+            min-width: 0 !important;
         }}
 
         /* 캘린더 그리드: 모바일에서도 Streamlit이 세로로 쌓지 않고 7열을 유지하도록 강제 */
@@ -234,7 +245,9 @@ def apply_style():
             padding: 4px 2px !important;
             font-size: 11px !important;
             min-height: 40px !important;
-            white-space: normal !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
             line-height: 1.15 !important;
         }}
         @media (max-width: 480px) {{
@@ -242,6 +255,9 @@ def apply_style():
                 font-size: 9px !important;
                 padding: 3px 1px !important;
                 min-height: 32px !important;
+            }}
+            .st-key-cal_today_btn button {{
+                font-size: 7.5px !important;
             }}
             .st-key-cal_grid_wrap [data-testid="stCaptionContainer"] {{
                 display: none !important;
