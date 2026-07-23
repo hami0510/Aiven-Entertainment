@@ -160,12 +160,57 @@ def apply_style():
             white-space: nowrap;
         }}
         .cal-more {{ font-size: 9.5px; color: {MUTED}; }}
+
+        /* 오늘 날짜 버튼: 선택 여부와 무관하게 항상 굵은 테두리로 강조 */
+        .st-key-cal_today_wrap button {{
+            border: 2px solid {INK} !important;
+            font-weight: 800 !important;
+        }}
     </style>
     """
     # 줄바꿈이 있으면 마크다운이 코드블록/일반 텍스트로 오인할 수 있어
     # 완전히 한 줄로 압축해서 렌더링합니다 (CSS는 줄바꿈과 무관하게 동작).
     css = " ".join(line.strip() for line in css.split("\n") if line.strip())
     st.markdown(css, unsafe_allow_html=True)
+
+
+def month_calendar(events_by_date: dict, year: int, month: int):
+    """
+    events_by_date: {'2026-07-23': [('🗓️', '제목1'), ('🎤', '제목2')], ...}
+    해당 월의 달력을 그리드 형태로 렌더링합니다.
+    """
+    import calendar as _cal
+    from datetime import date as _date
+
+    cal = _cal.Calendar(firstweekday=6)  # 일요일 시작
+    weeks = cal.monthdayscalendar(year, month)
+    days_kr = ["일", "월", "화", "수", "목", "금", "토"]
+
+    html = '<div class="cal-grid">'
+    for i, d in enumerate(days_kr):
+        cls = "cal-head cal-head-sun" if i == 0 else "cal-head"
+        html += f'<div class="{cls}">{d}</div>'
+
+    today = _date.today()
+    for week in weeks:
+        for i, day in enumerate(week):
+            if day == 0:
+                html += '<div class="cal-cell cal-empty"></div>'
+                continue
+            d_obj = _date(year, month, day)
+            is_today = d_obj == today
+            cell_cls = "cal-cell" + (" cal-today" if is_today else "")
+            num_cls = "cal-daynum" + (" cal-daynum-sun" if i == 0 else "")
+            evts = events_by_date.get(d_obj.isoformat(), [])
+            html += f'<div class="{cell_cls}"><div class="{num_cls}">{day}</div>'
+            for icon, title in evts[:3]:
+                short = title if len(title) <= 8 else title[:8] + "…"
+                html += f'<div class="cal-event">{icon} {short}</div>'
+            if len(evts) > 3:
+                html += f'<div class="cal-more">+{len(evts) - 3}건 더보기</div>'
+            html += '</div>'
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def page_header(icon: str, title: str, subtitle: str = ""):
@@ -206,42 +251,3 @@ def section_title(icon: str, text: str):
 
 def sidebar_brand():
     st.logo("logo.png", size="large")
-
-
-def month_calendar(events_by_date: dict, year: int, month: int):
-    """
-    events_by_date: {'2026-07-23': [('🗓️', '제목1'), ('🎤', '제목2')], ...}
-    해당 월의 달력을 그리드 형태로 렌더링합니다.
-    """
-    import calendar as _cal
-    from datetime import date as _date
-
-    cal = _cal.Calendar(firstweekday=6)  # 일요일 시작
-    weeks = cal.monthdayscalendar(year, month)
-    days_kr = ["일", "월", "화", "수", "목", "금", "토"]
-
-    html = '<div class="cal-grid">'
-    for i, d in enumerate(days_kr):
-        cls = "cal-head cal-head-sun" if i == 0 else "cal-head"
-        html += f'<div class="{cls}">{d}</div>'
-
-    today = _date.today()
-    for week in weeks:
-        for i, day in enumerate(week):
-            if day == 0:
-                html += '<div class="cal-cell cal-empty"></div>'
-                continue
-            d_obj = _date(year, month, day)
-            is_today = d_obj == today
-            cell_cls = "cal-cell" + (" cal-today" if is_today else "")
-            num_cls = "cal-daynum" + (" cal-daynum-sun" if i == 0 else "")
-            evts = events_by_date.get(d_obj.isoformat(), [])
-            html += f'<div class="{cell_cls}"><div class="{num_cls}">{day}</div>'
-            for icon, title in evts[:3]:
-                short = title if len(title) <= 8 else title[:8] + "…"
-                html += f'<div class="cal-event">{icon} {short}</div>'
-            if len(evts) > 3:
-                html += f'<div class="cal-more">+{len(evts) - 3}건 더보기</div>'
-            html += '</div>'
-    html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
